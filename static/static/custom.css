@@ -1,0 +1,54 @@
+/* ---- Blue on Blue Custom Theme for OpenWebUI ---- */
+
+/* This sets the main background and default text color */
+body, #app {
+  --background-color: #0d1b2a; /* Very Dark Blue */
+  --text-color: #e0fbfc;      /* Light Cyan/Blue */
+  background-color: var(--background-color) !important;
+  color: var(--text-color) !important;
+
+  /* --- Properties for your background image --- */
+  background-image: url('spash-dark.png'); 
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed; /* Optional: keeps the image from scrolling */
+}
+
+/* Sidebar and other primary surfaces */
+.bg-white, .bg-gray-100, .bg-gray-50 {
+  --background-color-secondary: #1b263b; /* Dark Slate Blue */
+  background-color: var(--background-color-secondary) !important;
+}
+
+/* Chat bubbles (from you) */
+.chat-bubble.text-white {
+  --user-chat-bubble-bg: #415a77; /* Muted Blue */
+  background-color: var(--user-chat-bubble-bg) !important;
+}
+
+/* Chat bubbles (from AI) */
+.chat-bubble {
+  --assistant-chat-bubble-bg: #1b263b; /* Dark Slate Blue (same as sidebar) */
+  background-color: var(--assistant-chat-bubble-bg) !important;
+}
+
+/* Headings and important text */
+h1, h2, h3, h4, h5, h6, .font-bold, strong {
+  --header-text-color: #a2d2ff; /* Sky Blue */
+  color: var(--header-text-color) !important;
+}
+
+/* Button styles */
+.btn-primary {
+  background-color: #415a77 !important;
+  color: #e0fbfc !important;
+  border-color: #778da9 !important;
+}
+
+/* Input fields */
+input, textarea, .form-select, .form-input {
+    background-color: #1b263b !important;
+    color: #e0fbfc !important;
+    border-color: #415a77 !important;
+}
