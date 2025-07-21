@@ -151,7 +151,7 @@ RUN pip3 install --no-cache-dir uv && \
     python -c "import os; import tiktoken; tiktoken.get_encoding(os.environ['TIKTOKEN_ENCODING_NAME'])"; \
     fi; \
     # KP ADDS
-    pip install watchtower logging
+    pip install watchtower logging; \
     chown -R $UID:$GID /app/backend/data/
 
 
