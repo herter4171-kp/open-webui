@@ -166,14 +166,15 @@ class YdocManager:
 
     async def remove_user_from_all_documents(self, user_id: str):
         if self._redis:
-            #keys = await self._redis.keys(f"{self._redis_key_prefix}:*")
+            keys = await self._redis.keys(f"{self._redis_key_prefix}:*")
 
-            cursor = b'0'
-            keys = []
-            pattern = f"{self._redis_key_prefix}:*"
-            while cursor:
-                cursor, batch = await redis.scan(cursor=cursor, match=pattern, count=100)
-                keys.extend(batch)
+            # For serverless elasticache
+            #cursor = b'0'
+            #keys = []
+            #pattern = f"{self._redis_key_prefix}:*"
+            #while cursor:
+            #    cursor, batch = await self._redis.scan(cursor=cursor, match=pattern, count=100)
+            #    keys.extend(batch)
 
             for key in keys:
                 if key.endswith(":users"):
