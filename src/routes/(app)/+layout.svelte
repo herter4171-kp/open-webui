@@ -368,45 +368,79 @@
 {/if}
 
 <style>
-	.loading {
-		display: inline-block;
-		clip-path: inset(0 1ch 0 0);
-		animation: l 1s steps(3) infinite;
-		letter-spacing: -0.5px;
-	}
+  /* ---- Global Style Injection for OpenWebUI ---- */
 
-	@keyframes l {
-		to {
-			clip-path: inset(0 -1ch 0 0);
-		}
-	}
+  /* This sets the main background image and default text color */
+  body {
+    --background-color: #0d1b2a; /* Very Dark Blue */
+    --text-color: #e0fbfc;      /* Light Cyan/Blue */
+    --background-color-secondary: #1b263b; /* Dark Slate Blue */
+    --user-chat-bubble-bg: #0f335c; /* Muted Blue */
+    --assistant-chat-bubble-bg: #1b263b; /* Dark Slate Blue */
+    --header-text-color: #a2d2ff; /* Sky Blue */
 
-	pre[class*='language-'] {
-		position: relative;
-		overflow: auto;
+    /* --- Background Image Start --- */
+    /* Assumes KAIROS.png is in the /frontend/static/ directory */
+    background-image: url('KAIROS.png') !important;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+    background-attachment: fixed !important;
+    /* --- Background Image End --- */
 
-		/* make space  */
-		margin: 5px 0;
-		padding: 1.75rem 0 1.75rem 1rem;
-		border-radius: 10px;
-	}
+    background-color: var(--background-color) !important;
+    color: var(--text-color) !important;
+  }
 
-	pre[class*='language-'] button {
-		position: absolute;
-		top: 5px;
-		right: 5px;
+  /* Sidebar and other primary surfaces become semi-transparent */
+  .bg-white, .bg-gray-100, .bg-gray-50 {
+    background-color: rgba(27, 38, 59, 0.85) !important;
+  }
 
-		font-size: 0.9rem;
-		padding: 0.15rem;
-		background-color: #828282;
+  /* ---- Styles for Loading Animation & Code Blocks ---- */
 
-		border: ridge 1px #7b7b7c;
-		border-radius: 5px;
-		text-shadow: #c4c4c4 0 0 2px;
-	}
+  .loading {
+      display: inline-block;
+      clip-path: inset(0 1ch 0 0);
+      animation: l 1s steps(3) infinite;
+      letter-spacing: -0.5px;
+  }
 
-	pre[class*='language-'] button:hover {
-		cursor: pointer;
-		background-color: #bcbabb;
-	}
+  @keyframes l {
+      to {
+          clip-path: inset(0 -1ch 0 0);
+      }
+  }
+
+  pre[class*='language-'] {
+      position: relative;
+      overflow: auto;
+      margin: 5px 0;
+      padding: 1.75rem 0 1.75rem 1rem;
+      border-radius: 10px;
+      /* Use a semi-transparent background to allow the theme background to show through */
+      background-color: rgba(13, 27, 42, 0.7);
+      border: 1px solid var(--user-chat-bubble-bg);
+  }
+
+  pre[class*='language-'] button {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      font-size: 0.9rem;
+      padding: 0.25rem 0.5rem;
+      
+      /* Themed styles */
+      background-color: var(--user-chat-bubble-bg) !important;
+      color: var(--text-color) !important;
+      border: 1px solid var(--header-text-color) !important;
+      border-radius: 5px;
+  }
+
+  pre[class*='language-'] button:hover {
+      cursor: pointer;
+      /* A slightly lighter blue for hover effect */
+      background-color: #476A8A !important;
+      color: #fff !important;
+  }
 </style>
