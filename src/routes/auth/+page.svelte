@@ -14,10 +14,11 @@
 	import { WEBUI_API_BASE_URL, WEBUI_BASE_URL } from '$lib/constants';
 	import { WEBUI_NAME, config, user, socket } from '$lib/stores';
 
-	import { generateInitialsImage, canvasPixelTest } from '$lib/utils';
+	import { generateInitialsImage, canvasPixelTest, querystringValue } from '$lib/utils';
 
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import OnBoarding from '$lib/components/OnBoarding.svelte';
+	import SensitiveInput from '$lib/components/common/SensitiveInput.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -25,17 +26,14 @@
 
 	let mode = $config?.features.enable_ldap ? 'ldap' : 'signin';
 
+	let form = null;
+
 	let name = '';
 	let email = '';
 	let password = '';
+	let confirmPassword = '';
 
 	let ldapUsername = '';
-
-	const querystringValue = (key) => {
-		const querystring = window.location.search;
-		const urlParams = new URLSearchParams(querystring);
-		return urlParams.get(key);
-	};
 
 	const setSessionUser = async (sessionUser) => {
 		if (sessionUser) {
@@ -63,6 +61,13 @@
 	};
 
 	const signUpHandler = async () => {
+		if ($config?.features?.enable_signup_password_confirmation) {
+			if (password !== confirmPassword) {
+				toast.error($i18n.t('Passwords do not match.'));
+				return;
+			}
+		}
+
 		const sessionUser = await userSignUp(name, email, password, generateInitialsImage(name)).catch(
 			(error) => {
 				toast.error(`${error}`);
@@ -92,18 +97,19 @@
 	};
 
 	const checkOauthCallback = async () => {
-		if (!$page.url.hash) {
-			return;
+		// Get the value of the 'token' cookie
+		function getCookie(name) {
+			const match = document.cookie.match(
+				new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1') + '=([^;]*)')
+			);
+			return match ? decodeURIComponent(match[1]) : null;
 		}
-		const hash = $page.url.hash.substring(1);
-		if (!hash) {
-			return;
-		}
-		const params = new URLSearchParams(hash);
-		const token = params.get('token');
+
+		const token = getCookie('token');
 		if (!token) {
 			return;
 		}
+
 		const sessionUser = await getSessionUser(token).catch((error) => {
 			toast.error(`${error}`);
 			return null;
@@ -111,6 +117,7 @@
 		if (!sessionUser) {
 			return;
 		}
+
 		localStorage.token = token;
 		await setSessionUser(sessionUser);
 	};
@@ -142,10 +149,12 @@
 
 	onMount(async () => {
 		if ($user !== undefined) {
-			const redirectPath = querystringValue('redirect') || '/';
+			const redirectPath = $page.url.searchParams.get('redirect') || '/';
 			goto(redirectPath);
 		}
 		await checkOauthCallback();
+
+		form = $page.url.searchParams.get('form');
 
 		loaded = true;
 		setLogoImage();
@@ -172,28 +181,15 @@
 	}}
 />
 
-<div class="w-full h-screen max-h-[100dvh] text-white relative">
+<div class="w-full h-screen max-h-[100dvh] text-white relative" id="auth-page">
 	<div class="w-full h-full absolute top-0 left-0 bg-white dark:bg-black"></div>
 
 	<div class="w-full absolute top-0 left-0 right-0 h-8 drag-region" />
 
 	{#if loaded}
-		<div class="fixed m-10 z-50">
-			<div class="flex space-x-2">
-				<div class=" self-center">
-					<img
-						id="logo"
-						crossorigin="anonymous"
-						src="{WEBUI_BASE_URL}/static/favicon.png"
-						class=" w-6 rounded-full"
-						alt=""
-					/>
-				</div>
-			</div>
-		</div>
-
 		<div
 			class="fixed bg-transparent min-h-screen w-full flex justify-center font-primary z-50 text-black dark:text-white"
+			id="auth-container"
 		>
 			<div class="w-full px-10 min-h-screen flex flex-col text-center">
 				{#if ($config?.features.auth_trusted_header ?? false) || $config?.features.auth === false}
@@ -213,6 +209,17 @@
 				{:else}
 					<div class="my-auto flex flex-col justify-center items-center">
 						<div class=" sm:max-w-md my-auto pb-10 w-full dark:text-gray-100">
+							{#if $config?.metadata?.auth_logo_position === 'center'}
+								<div class="flex justify-center mb-6">
+									<img
+										id="logo"
+										crossorigin="anonymous"
+										src="{WEBUI_BASE_URL}/static/favicon.png"
+										class="size-24 rounded-full"
+										alt=""
+									/>
+								</div>
+							{/if}
 							<form
 								class=" flex flex-col justify-center"
 								on:submit={(e) => {
@@ -243,7 +250,7 @@
 									{/if}
 								</div>
 
-								{#if $config?.features.enable_login_form || $config?.features.enable_ldap}
+								{#if $config?.features.enable_login_form || $config?.features.enable_ldap || form}
 									<div class="flex flex-col mt-4">
 										{#if mode === 'signup'}
 											<div class="mb-2">
@@ -254,7 +261,7 @@
 													bind:value={name}
 													type="text"
 													id="name"
-													class="my-0.5 w-full text-sm outline-hidden bg-transparent"
+													class="my-0.5 w-full text-sm outline-hidden bg-transparent placeholder:text-gray-300 dark:placeholder:text-gray-600"
 													autocomplete="name"
 													placeholder={$i18n.t('Enter Your Full Name')}
 													required
@@ -270,7 +277,7 @@
 												<input
 													bind:value={ldapUsername}
 													type="text"
-													class="my-0.5 w-full text-sm outline-hidden bg-transparent"
+													class="my-0.5 w-full text-sm outline-hidden bg-transparent placeholder:text-gray-300 dark:placeholder:text-gray-600"
 													autocomplete="username"
 													name="username"
 													id="username"
@@ -287,7 +294,7 @@
 													bind:value={email}
 													type="email"
 													id="email"
-													class="my-0.5 w-full text-sm outline-hidden bg-transparent"
+													class="my-0.5 w-full text-sm outline-hidden bg-transparent placeholder:text-gray-300 dark:placeholder:text-gray-600"
 													autocomplete="email"
 													name="email"
 													placeholder={$i18n.t('Enter Your Email')}
@@ -300,21 +307,41 @@
 											<label for="password" class="text-sm font-medium text-left mb-1 block"
 												>{$i18n.t('Password')}</label
 											>
-											<input
+											<SensitiveInput
 												bind:value={password}
 												type="password"
 												id="password"
-												class="my-0.5 w-full text-sm outline-hidden bg-transparent"
+												class="my-0.5 w-full text-sm outline-hidden bg-transparent placeholder:text-gray-300 dark:placeholder:text-gray-600"
 												placeholder={$i18n.t('Enter Your Password')}
 												autocomplete={mode === 'signup' ? 'new-password' : 'current-password'}
 												name="password"
 												required
 											/>
 										</div>
+
+										{#if mode === 'signup' && $config?.features?.enable_signup_password_confirmation}
+											<div class="mt-2">
+												<label
+													for="confirm-password"
+													class="text-sm font-medium text-left mb-1 block"
+													>{$i18n.t('Confirm Password')}</label
+												>
+												<SensitiveInput
+													bind:value={confirmPassword}
+													type="password"
+													id="confirm-password"
+													class="my-0.5 w-full text-sm outline-hidden bg-transparent"
+													placeholder={$i18n.t('Confirm Your Password')}
+													autocomplete="new-password"
+													name="confirm-password"
+													required
+												/>
+											</div>
+										{/if}
 									</div>
 								{/if}
 								<div class="mt-5">
-									{#if $config?.features.enable_login_form || $config?.features.enable_ldap}
+									{#if $config?.features.enable_login_form || $config?.features.enable_ldap || form}
 										{#if mode === 'ldap'}
 											<button
 												class="bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
@@ -363,7 +390,7 @@
 							{#if Object.keys($config?.oauth?.providers ?? {}).length > 0}
 								<div class="inline-flex items-center justify-center w-full">
 									<hr class="w-32 h-px my-4 border-0 dark:bg-gray-100/10 bg-gray-700/10" />
-									{#if $config?.features.enable_login_form || $config?.features.enable_ldap}
+									{#if $config?.features.enable_login_form || $config?.features.enable_ldap || form}
 										<span
 											class="px-3 text-sm font-medium text-gray-900 dark:text-white bg-transparent"
 											>{$i18n.t('or')}</span
@@ -515,5 +542,21 @@
 				{/if}
 			</div>
 		</div>
+
+		{#if !$config?.metadata?.auth_logo_position}
+			<div class="fixed m-10 z-50">
+				<div class="flex space-x-2">
+					<div class=" self-center">
+						<img
+							id="logo"
+							crossorigin="anonymous"
+							src="{WEBUI_BASE_URL}/static/favicon.png"
+							class=" w-6 rounded-full"
+							alt=""
+						/>
+					</div>
+				</div>
+			</div>
+		{/if}
 	{/if}
 </div>

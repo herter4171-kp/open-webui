@@ -36,7 +36,9 @@
 
 	let messages = [];
 
-	export let sendPrompt: Function;
+	export let setInputText: Function = () => {};
+
+	export let sendMessage: Function;
 	export let continueResponse: Function;
 	export let regenerateResponse: Function;
 	export let mergeResponses: Function;
@@ -47,13 +49,15 @@
 	export let addMessages: Function = () => {};
 
 	export let readOnly = false;
+	export let editCodeBlock = true;
 
+	export let topPadding = false;
 	export let bottomPadding = false;
 	export let autoScroll;
 
 	export let onSelect = (e) => {};
 
-	let messagesCount = 20;
+	export let messagesCount: number | null = 20;
 	let messagesLoading = false;
 
 	const loadMoreMessages = async () => {
@@ -73,7 +77,7 @@
 		let _messages = [];
 
 		let message = history.messages[history.currentId];
-		while (message && _messages.length <= messagesCount) {
+		while (message && (messagesCount !== null ? _messages.length <= messagesCount : true)) {
 			_messages.unshift({ ...message });
 			message = message.parentId !== null ? history.messages[message.parentId] : null;
 		}
@@ -292,7 +296,7 @@
 				history.currentId = userMessageId;
 
 				await tick();
-				await sendPrompt(history, userPrompt, userMessageId);
+				await sendMessage(history, userMessageId);
 			} else {
 				// Edit user message
 				history.messages[messageId].content = content;
@@ -401,7 +405,8 @@
 	{:else}
 		<div class="w-full pt-2">
 			{#key chatId}
-				<div class="w-full">
+				<section class="w-full" aria-labelledby="chat-conversation">
+					<h2 class="sr-only" id="chat-conversation">{$i18n.t('Chat Conversation')}</h2>
 					{#if messages.at(0)?.parentId !== null}
 						<Loader
 							on:visible={(e) => {
@@ -413,38 +418,42 @@
 						>
 							<div class="w-full flex justify-center py-1 text-xs animate-pulse items-center gap-2">
 								<Spinner className=" size-4" />
-								<div class=" ">Loading...</div>
+								<div class=" ">{$i18n.t('Loading...')}</div>
 							</div>
 						</Loader>
 					{/if}
-
-					{#each messages as message, messageIdx (message.id)}
-						<Message
-							{chatId}
-							bind:history
-							{selectedModels}
-							messageId={message.id}
-							idx={messageIdx}
-							{user}
-							{gotoMessage}
-							{showPreviousMessage}
-							{showNextMessage}
-							{updateChat}
-							{editMessage}
-							{deleteMessage}
-							{rateMessage}
-							{actionMessage}
-							{saveMessage}
-							{submitMessage}
-							{regenerateResponse}
-							{continueResponse}
-							{mergeResponses}
-							{addMessages}
-							{triggerScroll}
-							{readOnly}
-						/>
-					{/each}
-				</div>
+					<ul role="log" aria-live="polite" aria-relevant="additions" aria-atomic="false">
+						{#each messages as message, messageIdx (message.id)}
+							<Message
+								{chatId}
+								bind:history
+								{selectedModels}
+								messageId={message.id}
+								idx={messageIdx}
+								{user}
+								{setInputText}
+								{gotoMessage}
+								{showPreviousMessage}
+								{showNextMessage}
+								{updateChat}
+								{editMessage}
+								{deleteMessage}
+								{rateMessage}
+								{actionMessage}
+								{saveMessage}
+								{submitMessage}
+								{regenerateResponse}
+								{continueResponse}
+								{mergeResponses}
+								{addMessages}
+								{triggerScroll}
+								{readOnly}
+								{editCodeBlock}
+								{topPadding}
+							/>
+						{/each}
+					</ul>
+				</section>
 				<div class="pb-12" />
 				{#if bottomPadding}
 					<div class="  pb-6" />
