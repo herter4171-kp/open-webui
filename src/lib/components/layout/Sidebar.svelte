@@ -839,10 +839,10 @@
 							<a
 								id="sidebar-notes-button"
 								class="grow flex items-center space-x-3 rounded-2xl px-2.5 py-2 hover:bg-gray-100 dark:hover:bg-gray-900 transition"
-								href="/notes"
+								href="/docs"
 								on:click={itemClickHandler}
 								draggable="false"
-								aria-label={$i18n.t('Notes')}
+								aria-label={$i18n.t('Docs')}
 							>
 								<div class="self-center">
 									<Note className="size-4.5" strokeWidth="2" />
