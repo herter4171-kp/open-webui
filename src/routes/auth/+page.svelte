@@ -280,7 +280,7 @@
 										{/if}
 
 										{#if mode === 'ldap'}
-											<div class="mb-2"[]>
+											<div class="mb-2">
 												<label for="username" class="text-sm font-medium text-left mb-1 block"
 													>{$i18n.t('Username')}</label
 												>
