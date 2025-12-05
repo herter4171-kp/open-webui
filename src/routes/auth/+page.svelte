@@ -21,7 +21,6 @@
 	import SensitiveInput from '$lib/components/common/SensitiveInput.svelte';
 	import { redirect } from '@sveltejs/kit';
 
-	# KP
 	import LoginDisclaimer from '$lib/components/LoginDisclaimer.svelte';
 
 	const i18n = getContext('i18n');
@@ -257,10 +256,9 @@
 											{$i18n.t(`Sign up to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
 										{/if}
 									</div>
-
-									# KP
-									<LoginDisclaimer />
 								</div>
+
+								<LoginDisclaimer />
 
 								{#if $config?.features.enable_login_form || $config?.features.enable_ldap || form}
 									<div class="flex flex-col mt-4">
@@ -282,7 +280,7 @@
 										{/if}
 
 										{#if mode === 'ldap'}
-											<div class="mb-2">
+											<div class="mb-2"[]>
 												<label for="username" class="text-sm font-medium text-left mb-1 block"
 													>{$i18n.t('Username')}</label
 												>
