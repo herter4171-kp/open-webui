@@ -21,6 +21,9 @@
 	import SensitiveInput from '$lib/components/common/SensitiveInput.svelte';
 	import { redirect } from '@sveltejs/kit';
 
+	# KP
+	import LoginDisclaimer from '$lib/components/LoginDisclaimer.svelte';
+
 	const i18n = getContext('i18n');
 
 	let loaded = false;
@@ -255,14 +258,8 @@
 										{/if}
 									</div>
 
-									{#if $config?.onboarding ?? false}
-										<div class="mt-1 text-xs font-medium text-gray-600 dark:text-gray-500">
-											ⓘ {$WEBUI_NAME}
-											{$i18n.t(
-												'does not make any external connections, and your data stays securely on your locally hosted server.'
-											)}
-										</div>
-									{/if}
+									# KP
+									<LoginDisclaimer />
 								</div>
 
 								{#if $config?.features.enable_login_form || $config?.features.enable_ldap || form}
