@@ -14,6 +14,8 @@
             
             These acknowledgments and consents cover all use of the system, 
             including work-related use and personal use without exception.
+
+            Before logging in, you must have read <a href="https://kairospowerllc.sharepoint.us/:w:/s/IT/EZhHkM5TsZ1Pm-7neZ1MVwYBdSZSQ9tf9wCuOgTNfkIGtQ?e=NVl30c">the company policy on LLMs (AI)</a>.
         </p>
     </div>
 </div>
