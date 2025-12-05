@@ -1,8 +1,8 @@
 <div class="absolute top-10 left-1/2 -translate-x-1/2 w-full max-w-lg p-4 z-50">
     <div class="bg-red-100 border-l-4 border-red-600 text-red-800 p-4 rounded shadow-lg text-center">
-        <p class="font-bold uppercase">Disclaimer</p>
+        <p class="font-bold uppercase">ATTENTION</p>
         <p class="text-sm mt-1">
-            ATTENTION: You are about to log into a system that is monitored. By 
+            You are about to log into a system that is monitored. By 
             logging in, you consent to the unrestricted monitoring, interception,
             recording, searching, and disclosure of all communications and data 
             transiting, traveling to or from, or stored on this system at any 
