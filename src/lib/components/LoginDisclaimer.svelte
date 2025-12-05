@@ -11,11 +11,11 @@
             you have no reasonable expectation of privacy regarding your use of
             this system, and you agree to comply with all approved use company 
             policies and guidelines. 
-            
+            <br><br>
             These acknowledgments and consents cover all use of the system, 
             including work-related use and personal use without exception.
-
-            Before logging in, you must have read <a href="https://kairospowerllc.sharepoint.us/:w:/s/IT/EZhHkM5TsZ1Pm-7neZ1MVwYBdSZSQ9tf9wCuOgTNfkIGtQ?e=NVl30c" class="text-blue-600 dark:text-blue-400 hover:underline">the company policy on LLMs (AI)</a>.
+            <br><br>
+            By logging in, you certify that you have read <a href="https://kairospowerllc.sharepoint.us/:w:/s/IT/EZhHkM5TsZ1Pm-7neZ1MVwYBdSZSQ9tf9wCuOgTNfkIGtQ?e=NVl30c" class="text-blue-600 dark:text-blue-400 hover:underline">the company policy on LLMs (AI)</a>.
         </p>
     </div>
 </div>
