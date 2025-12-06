@@ -39,7 +39,35 @@ export default {
 			},
 			transitionProperty: {
 				width: 'width'
+			},
+			// KP ADD
+			fontFamily: {
+				// Your Custom Sans-Serif Stack
+				sans: [
+				'Segoe UI',       // <--- Your #1 Priority for Windows
+				'Arial',          // <--- Fallback
+				'ui-sans-serif',  // <--- Tailwind defaults below...
+				'system-ui',
+				'sans-serif',
+				'Apple Color Emoji',
+				'Segoe UI Emoji', 
+				'Segoe UI Symbol', 
+				'Noto Color Emoji'
+				],
+				// Your Custom Monospace Stack
+				mono: [
+				'Consolas',       // <--- Your #1 Priority for Windows
+				'Lucida Console', // <--- Fallback
+				'ui-monospace',
+				'SFMono-Regular', 
+				'Menlo', 
+				'Monaco', 
+				'Liberation Mono', 
+				'Courier New', 
+				'monospace'
+				],
 			}
+			// END KP ADD
 		}
 	},
 	plugins: [typography, containerQueries]
