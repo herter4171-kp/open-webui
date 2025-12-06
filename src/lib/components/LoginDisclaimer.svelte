@@ -1,5 +1,5 @@
 <div class="absolute top-10 left-1/2 -translate-x-1/2 w-full max-w-lg p-4 z-60">
-    <div class="p-4 rounded shadow-lg text-center" style="background-color: #FFFFFF color: #2386C8;; border: 4px solid #12588C;">
+    <div class="p-4 rounded shadow-lg text-center" style="background-color: #FFFFFF; color: #2386C8; border: 4px solid #12588C;">
         <p class="font-bold uppercase">ATTENTION</p>
         <p class="text-sm mt-1">
             You are about to log into a system that is monitored. By 
