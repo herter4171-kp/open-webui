@@ -1,5 +1,5 @@
 <div class="absolute top-10 left-1/2 -translate-x-1/2 w-full max-w-lg p-4 z-50">
-    <div class="bg-red-100 border-l-4 border-red-600 text-red-800 p-4 rounded shadow-lg text-center">
+    <div class="p-4 rounded shadow-lg text-center" style="background-color: #2386C8; color: #FFFFFF; border: 4px solid #12588C;">
         <p class="font-bold uppercase">ATTENTION</p>
         <p class="text-sm mt-1">
             You are about to log into a system that is monitored. By 
@@ -15,7 +15,7 @@
             These acknowledgments and consents cover all use of the system, 
             including work-related use and personal use without exception.
             <br><br>
-            By logging in, you certify that you have read <a href="https://kairospowerllc.sharepoint.us/:w:/s/IT/EZhHkM5TsZ1Pm-7neZ1MVwYBdSZSQ9tf9wCuOgTNfkIGtQ?e=NVl30c" class="text-blue-600 dark:text-blue-400 hover:underline">the company policy on LLMs (AI)</a>.
+            By logging in, you certify that you have read <br><a href="https://kairospowerllc.sharepoint.us/:w:/s/IT/EZhHkM5TsZ1Pm-7neZ1MVwYBdSZSQ9tf9wCuOgTNfkIGtQ?e=NVl30c" class="text-rose-600 dark:text-rose-400 underline">the company policy on LLMs (AI)</a>.
         </p>
     </div>
 </div>
