@@ -1,5 +1,5 @@
 <div class="relative mx-auto mt-10 mb-4 w-full max-w-lg p-4 z-50">
-    <div class="p-4 rounded shadow-lg text-center" style="background-color: #12588C; color: #FFFFFF; border: 4px solid #2386C8;">
+    <div class="p-4 rounded shadow-lg text-center" style="background-color: #233539; color: #FFFFFF; border: 0px solid #2386C8;">
         <p class="font-bold uppercase">ATTENTION</p>
         <p class="text-sm mt-1">
             You are about to log into a system that is monitored. By 
