@@ -56,7 +56,10 @@ class RedisKbHandler(object):
             kb_key = f"{self.key_pfx}:{kb_id}"
             all_results += await self._redis.lrange(kb_key, 0, -1)
         
-        return [json.loads(x) for x in all_results]
+        results_maps = [json.loads(x) for x in all_results]
+        results_maps.sort(key=lambda h: (h.get("score"), h.get("title")), reverse=True)
+
+        return results_maps
     
     async def clear_keys(self):
         """Sanitize keyspace for next time around"""
