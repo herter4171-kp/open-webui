@@ -16,7 +16,6 @@ import aiohttp
 import aiofiles
 import requests
 import mimetypes
-from urllib.parse import urljoin, quote
 
 from fastapi import (
     Depends,
@@ -34,7 +33,9 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 
+from open_webui.utils.misc import strict_match_mime_type
 from open_webui.utils.auth import get_admin_user, get_verified_user
+from open_webui.utils.headers import include_user_info_headers
 from open_webui.config import (
     WHISPER_MODEL_AUTO_UPDATE,
     WHISPER_MODEL_DIR,
@@ -48,7 +49,6 @@ from open_webui.env import (
     ENV,
     AIOHTTP_CLIENT_SESSION_SSL,
     AIOHTTP_CLIENT_TIMEOUT,
-    SRC_LOG_LEVELS,
     DEVICE_TYPE,
     ENABLE_FORWARD_USER_INFO_HEADERS,
 )
@@ -63,7 +63,6 @@ AZURE_MAX_FILE_SIZE_MB = 200
 AZURE_MAX_FILE_SIZE = AZURE_MAX_FILE_SIZE_MB * 1024 * 1024  # Convert MB to bytes
 
 log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["AUDIO"])
 
 SPEECH_CACHE_DIR = CACHE_DIR / "audio" / "speech"
 SPEECH_CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -364,23 +363,17 @@ async def speech(request: Request, user=Depends(get_verified_user)):
                     **(request.app.state.config.TTS_OPENAI_PARAMS or {}),
                 }
 
+                headers = {
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {request.app.state.config.TTS_OPENAI_API_KEY}",
+                }
+                if ENABLE_FORWARD_USER_INFO_HEADERS:
+                    headers = include_user_info_headers(headers, user)
+
                 r = await session.post(
                     url=f"{request.app.state.config.TTS_OPENAI_API_BASE_URL}/audio/speech",
                     json=payload,
-                    headers={
-                        "Content-Type": "application/json",
-                        "Authorization": f"Bearer {request.app.state.config.TTS_OPENAI_API_KEY}",
-                        **(
-                            {
-                                "X-OpenWebUI-User-Name": quote(user.name, safe=" "),
-                                "X-OpenWebUI-User-Id": user.id,
-                                "X-OpenWebUI-User-Email": user.email,
-                                "X-OpenWebUI-User-Role": user.role,
-                            }
-                            if ENABLE_FORWARD_USER_INFO_HEADERS
-                            else {}
-                        ),
-                    },
+                    headers=headers,
                     ssl=AIOHTTP_CLIENT_SESSION_SSL,
                 )
 
@@ -570,7 +563,7 @@ async def speech(request: Request, user=Depends(get_verified_user)):
         return FileResponse(file_path)
 
 
-def transcription_handler(request, file_path, metadata):
+def transcription_handler(request, file_path, metadata, user=None):
     filename = os.path.basename(file_path)
     file_dir = os.path.dirname(file_path)
     id = filename.split(".")[0]
@@ -621,11 +614,15 @@ def transcription_handler(request, file_path, metadata):
                 if language:
                     payload["language"] = language
 
+                headers = {
+                    "Authorization": f"Bearer {request.app.state.config.STT_OPENAI_API_KEY}"
+                }
+                if user and ENABLE_FORWARD_USER_INFO_HEADERS:
+                    headers = include_user_info_headers(headers, user)
+
                 r = requests.post(
                     url=f"{request.app.state.config.STT_OPENAI_API_BASE_URL}/audio/transcriptions",
-                    headers={
-                        "Authorization": f"Bearer {request.app.state.config.STT_OPENAI_API_KEY}"
-                    },
+                    headers=headers,
                     files={"file": (filename, open(file_path, "rb"))},
                     data=payload,
                 )
@@ -1027,7 +1024,9 @@ def transcription_handler(request, file_path, metadata):
             )
 
 
-def transcribe(request: Request, file_path: str, metadata: Optional[dict] = None):
+def transcribe(
+    request: Request, file_path: str, metadata: Optional[dict] = None, user=None
+):
     log.info(f"transcribe: {file_path} {metadata}")
 
     if is_audio_conversion_required(file_path):
@@ -1054,7 +1053,9 @@ def transcribe(request: Request, file_path: str, metadata: Optional[dict] = None
         with ThreadPoolExecutor() as executor:
             # Submit tasks for each chunk_path
             futures = [
-                executor.submit(transcription_handler, request, chunk_path, metadata)
+                executor.submit(
+                    transcription_handler, request, chunk_path, metadata, user
+                )
                 for chunk_path in chunk_paths
             ]
             # Gather results as they complete
@@ -1150,20 +1151,11 @@ def transcription(
     user=Depends(get_verified_user),
 ):
     log.info(f"file.content_type: {file.content_type}")
-
     stt_supported_content_types = getattr(
         request.app.state.config, "STT_SUPPORTED_CONTENT_TYPES", []
     )
 
-    if not any(
-        fnmatch(file.content_type, content_type)
-        for content_type in (
-            stt_supported_content_types
-            if stt_supported_content_types
-            and any(t.strip() for t in stt_supported_content_types)
-            else ["audio/*", "video/webm"]
-        )
-    ):
+    if not strict_match_mime_type(stt_supported_content_types, file.content_type):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.FILE_NOT_SUPPORTED,
@@ -1189,7 +1181,7 @@ def transcription(
             if language:
                 metadata = {"language": language}
 
-            result = transcribe(request, file_path, metadata)
+            result = transcribe(request, file_path, metadata, user)
 
             return {
                 **result,
