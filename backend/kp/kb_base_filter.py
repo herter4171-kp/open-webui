@@ -6,7 +6,7 @@ description: >
     This filter feeds the latest user message to a Bedrock knowledge base, and the reply is prepended
     as an assistant message before the prompt itself when sent to the target model, i.e. ChatGPT.
 required_open_webui_version: 0.4.0
-requirements: aiobotocore==2.25.2, boto3==1.40.70, botocore==1.40.70
+requirements: aiobotocore==3.1.0
 version: 0.0.3
 """
 from os import environ
