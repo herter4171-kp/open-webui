@@ -15,6 +15,7 @@ from typing import Optional, List, Dict, Any
 import asyncio
 import json
 import traceback
+import time
 
 from aiobotocore.session import get_session 
 from botocore.config import Config
@@ -38,31 +39,39 @@ class KbBaseFilter:
         self.toggle = True
     
     async def inlet(self, body: dict) -> dict:
-        chat_id = body["metadata"]["chat_id"]
-        all_messages = body["messages"]
-        user_message = all_messages.pop()
+        try:
+            chat_id = body["metadata"]["chat_id"]
+            all_messages = body["messages"]
+            user_message = all_messages.pop()
 
-        # Get Redis, and add our KB ID to roster
-        redis = RedisKbHandler(chat_id, self.valves.KB_ID)
-        await redis.append_roster()
+            # Get Redis, and add our KB ID to roster
+            redis = RedisKbHandler(chat_id, self.valves.KB_ID)
+            await redis.append_roster()
 
-        # Get KB RAG results, and send to Redis
-        my_hits = await retrieve_from_kb(user_message["content"], self.valves.KB_ID, self.valves.TOP_K, self.valves.HYBRID, self.valves.AWS_REGION)
-        await redis.add_rag_results(my_hits)
+            # Get KB RAG results, and send to Redis
+            my_hits = await retrieve_from_kb(user_message["content"], self.valves.KB_ID, self.valves.TOP_K, self.valves.HYBRID, self.valves.AWS_REGION)
+            await redis.add_rag_results(my_hits)
 
-        # Get all RAG results, and format
-        all_hits = await redis.get_rag_results()
-        context_block = format_context(all_hits, self.valves.MAX_CONTEXT_CHARS)
+            # Get all RAG results, and format
+            all_hits = await redis.get_rag_results()
+            context_block = format_context(all_hits, self.valves.MAX_CONTEXT_CHARS)
 
-        # Want to overwrite prior RAG message if it was given to us
-        if prior_message_is_rag(all_messages):
-            all_messages.pop() # Remove old RAG message
+            # Want to overwrite prior RAG message if it was given to us
+            if prior_message_is_rag(all_messages):
+                all_messages.pop() # Remove old RAG message
 
-        # TODO: Overwrite a message before user's if it starts with "Retrieved Context"
-        all_messages += [{"role": "assistant", "content": context_block}, user_message]
-        body["messages"] = all_messages
+            # TODO: Overwrite a message before user's if it starts with "Retrieved Context"
+            all_messages += [{"role": "assistant", "content": context_block}, user_message]
+            body["messages"] = all_messages
+        except Exception as ex:
+            print(ex)
+            print(traceback.format_exc())
 
-        return body  
+            # Since the logs are a bit chaotic
+            with open(f"/tmp/FFS-{time.time()}.txt", "w") as f:
+                f.writelines(traceback.format_exc())
+        finally:
+            return body  
 
     def stream(self, event: dict) -> dict:
         return event
