@@ -84,3 +84,4 @@ class KbBaseFilter:
         except Exception as ex:
             print(ex)
             print(traceback.format_exc())
+            return body

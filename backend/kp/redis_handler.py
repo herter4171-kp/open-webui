@@ -2,6 +2,22 @@ import os
 import redis.asyncio as redis
 import json
 
+_pool = None
+
+def get_pool():
+    global _pool
+    if _pool is None:
+        _pool = redis.ConnectionPool.from_url(
+            os.getenv("REDIS_URL"),
+            decode_responses=True,
+            max_connections=150,
+            socket_timeout=5.0,
+            socket_connect_timeout=5.0,
+            health_check_interval=30,
+        )
+
+    return _pool
+
 class RedisKbHandler(object):
     @property
     def key_pfx(self):
@@ -20,7 +36,7 @@ class RedisKbHandler(object):
     # TODO: Use metadata/message_id instead of chat_id?
     def __init__(self, chat_id: str, kb_id: str):
         """Get client, then set IDs and roster"""
-        self._redis = redis.Redis.from_url(os.getenv("REDIS_URL"), decode_responses=True)
+        self._redis = redis.Redis(connection_pool=get_pool())
         self._chat_id = chat_id
         self._kb_id = kb_id
 
