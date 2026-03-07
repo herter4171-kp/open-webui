@@ -9,12 +9,18 @@
 	import { page } from '$app/stores';
 
 	import { getBackendConfig } from '$lib/apis';
-	import { ldapUserSignIn, getSessionUser, userSignIn, userSignUp } from '$lib/apis/auths';
+	import {
+		ldapUserSignIn,
+		getSessionUser,
+		userSignIn,
+		userSignUp,
+		updateUserTimezone
+	} from '$lib/apis/auths';
 
 	import { WEBUI_API_BASE_URL, WEBUI_BASE_URL } from '$lib/constants';
 	import { WEBUI_NAME, config, user, socket } from '$lib/stores';
 
-	import { generateInitialsImage, canvasPixelTest } from '$lib/utils';
+	import { generateInitialsImage, canvasPixelTest, getUserTimezone } from '$lib/utils';
 
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import OnBoarding from '$lib/components/OnBoarding.svelte';
@@ -48,6 +54,12 @@
 			$socket.emit('user-join', { auth: { token: sessionUser.token } });
 			await user.set(sessionUser);
 			await config.set(await getBackendConfig());
+
+			// Update user timezone
+			const timezone = getUserTimezone();
+			if (sessionUser.token && timezone) {
+				updateUserTimezone(sessionUser.token, timezone);
+			}
 
 			if (!redirectPath) {
 				redirectPath = $page.url.searchParams.get('redirect') || '/';
@@ -232,7 +244,7 @@
 										crossorigin="anonymous"
 										src="{WEBUI_BASE_URL}/static/favicon.png"
 										class="size-24 rounded-full"
-										alt=""
+										alt="{$WEBUI_NAME} logo"
 									/>
 								</div>
 							{/if}
@@ -322,7 +334,9 @@
 												placeholder={$i18n.t('Enter Your Password')}
 												autocomplete={mode === 'signup' ? 'new-password' : 'current-password'}
 												name="password"
+												screenReader={true}
 												required
+												aria-required="true"
 											/>
 										</div>
 
@@ -418,6 +432,7 @@
 												xmlns="http://www.w3.org/2000/svg"
 												viewBox="0 0 48 48"
 												class="size-6 mr-3"
+												aria-hidden="true"
 											>
 												<path
 													fill="#EA4335"
@@ -453,6 +468,7 @@
 												xmlns="http://www.w3.org/2000/svg"
 												viewBox="0 0 21 21"
 												class="size-6 mr-3"
+												aria-hidden="true"
 											>
 												<rect x="1" y="1" width="9" height="9" fill="#f25022" /><rect
 													x="1"
@@ -483,6 +499,7 @@
 												xmlns="http://www.w3.org/2000/svg"
 												viewBox="0 0 24 24"
 												class="size-6 mr-3"
+												aria-hidden="true"
 											>
 												<path
 													fill="currentColor"
@@ -506,6 +523,7 @@
 												stroke-width="1.5"
 												stroke="currentColor"
 												class="size-6 mr-3"
+												aria-hidden="true"
 											>
 												<path
 													stroke-linecap="round"
