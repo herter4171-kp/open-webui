@@ -17,6 +17,7 @@ high-cardinality label sets.
 
 from __future__ import annotations
 
+import asyncio
 import time
 from typing import Dict, List, Sequence, Any
 from base64 import b64encode
@@ -124,26 +125,28 @@ def setup_metrics(app: FastAPI, resource: Resource) -> None:
         unit='ms',
     )
 
-    async def observe_active_users(
+    def observe_active_users(
         options: metrics.CallbackOptions,
     ) -> Sequence[metrics.Observation]:
-        return [
-            metrics.Observation(
-                value=await Users.get_active_user_count(),
-            )
-        ]
+        loop = asyncio.new_event_loop()
+        try:
+            value = loop.run_until_complete(Users.get_active_user_count())
+            return [metrics.Observation(value=value)]
+        finally:
+            loop.close()
 
-    async def observe_total_registered_users(
+    def observe_total_registered_users(
         options: metrics.CallbackOptions,
     ) -> Sequence[metrics.Observation]:
         # IMPORTANT: Use get_num_users() for efficient COUNT(*) query.
         # Do NOT use len(get_users()["users"]) - it loads ALL user records into memory,
         # causing connection pool exhaustion on high-latency databases (e.g., Aurora).
-        return [
-            metrics.Observation(
-                value=await Users.get_num_users() or 0,
-            )
-        ]
+        loop = asyncio.new_event_loop()
+        try:
+            value = loop.run_until_complete(Users.get_num_users())
+            return [metrics.Observation(value=value or 0)]
+        finally:
+            loop.close()
 
     meter.create_observable_gauge(
         name='webui.users.total',
@@ -159,10 +162,15 @@ def setup_metrics(app: FastAPI, resource: Resource) -> None:
         callbacks=[observe_active_users],
     )
 
-    async def observe_users_active_today(
+    def observe_users_active_today(
         options: metrics.CallbackOptions,
     ) -> Sequence[metrics.Observation]:
-        return [metrics.Observation(value=await Users.get_num_users_active_today())]
+        loop = asyncio.new_event_loop()
+        try:
+            value = loop.run_until_complete(Users.get_num_users_active_today())
+            return [metrics.Observation(value=value)]
+        finally:
+            loop.close()
 
     meter.create_observable_gauge(
         name='webui.users.active.today',
