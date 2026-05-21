@@ -2251,6 +2251,10 @@ def strip_skill_mentions(messages: list[dict]) -> None:
                         part['text'] = strip_re.sub('', text).strip()
 
 
+def should_process_chat_filters(metadata: dict) -> bool:
+    return bool(metadata.get('chat_id') and metadata.get('session_id') and metadata.get('message_id'))
+
+
 async def process_chat_payload(request, form_data, user, metadata, model):
     # Pipeline Inlet -> Filter Inlet -> Chat Memory -> Chat Web Search -> Chat Image Generation
     # -> Chat Code Interpreter (Form Data Update) -> (Default) Chat Tools Function Calling
@@ -2465,25 +2469,26 @@ async def process_chat_payload(request, form_data, user, metadata, model):
     variables = form_data.pop('variables', None)
     payload_tools = form_data.get('tools', None)  # snapshot before filters
 
-    # Process the form_data through the pipeline
-    try:
-        form_data = await process_pipeline_inlet_filter(request, form_data, user, models)
-    except Exception as e:
-        raise e
+    if should_process_chat_filters(metadata):
+        # Process the form_data through the pipeline
+        try:
+            form_data = await process_pipeline_inlet_filter(request, form_data, user, models)
+        except Exception as e:
+            raise e
 
-    try:
-        filter_ids = await get_sorted_filter_ids(request, model, metadata.get('filter_ids', []))
-        filter_functions = await Functions.get_functions_by_ids(filter_ids)
+        try:
+            filter_ids = await get_sorted_filter_ids(request, model, metadata.get('filter_ids', []))
+            filter_functions = await Functions.get_functions_by_ids(filter_ids)
 
-        form_data, flags = await process_filter_functions(
-            request=request,
-            filter_functions=filter_functions,
-            filter_type='inlet',
-            form_data=form_data,
-            extra_params=extra_params,
-        )
-    except Exception as e:
-        raise Exception(f'{e}')
+            form_data, flags = await process_filter_functions(
+                request=request,
+                filter_functions=filter_functions,
+                filter_type='inlet',
+                form_data=form_data,
+                extra_params=extra_params,
+            )
+        except Exception as e:
+            raise Exception(f'{e}')
 
     features = form_data.pop('features', None) or {}
     extra_params['__features__'] = features
@@ -3282,6 +3287,9 @@ async def outlet_filter_handler(ctx):
     if not chat_id or not message_id:
         return
 
+    if not should_process_chat_filters(metadata):
+        return
+
     is_temp_chat = chat_id.startswith('local:') or chat_id.startswith('channel:')
 
     try:
@@ -3572,7 +3580,11 @@ async def streaming_chat_response_handler(response, ctx):
 
     filter_functions = [
         await Functions.get_function_by_id(filter_id)
-        for filter_id in await get_sorted_filter_ids(request, model, metadata.get('filter_ids', []))
+        for filter_id in (
+            await get_sorted_filter_ids(request, model, metadata.get('filter_ids', []))
+            if should_process_chat_filters(metadata)
+            else []
+        )
     ]
 
     # Standard streaming response handler
