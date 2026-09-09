@@ -81,6 +81,7 @@ from open_webui.tasks import clear_response_stream, save_response_stream
 from open_webui.utils.access_control import has_connection_access, has_permission
 from open_webui.utils.access_control.files import get_owner_accessible_folder_files
 from open_webui.utils.access_control.folders import has_folder_access
+from open_webui.utils.api_policy import is_api_key_request
 from open_webui.utils.ask_user import stage_ask_user_tool_calls
 from open_webui.utils.chat import generate_chat_completion
 from open_webui.utils.chat_id import is_saved_chat_id
@@ -1989,6 +1990,9 @@ async def chat_image_generation_handler(request: Request, form_data: dict, extra
 async def chat_completion_files_handler(
     request: Request, body: dict, extra_params: dict, user: UserModel
 ) -> tuple[dict, dict[str, list]]:
+    if is_api_key_request(request):
+        return body, {'sources': []}
+
     __event_emitter__ = extra_params['__event_emitter__']
     sources = []
 
@@ -2367,6 +2371,7 @@ def should_process_chat_filters(metadata: dict) -> bool:
 
 
 async def process_chat_payload(request, form_data, user, metadata, model):
+    allow_knowledge = not is_api_key_request(request)
     # Ensure chat_id is always a string — external API clients may omit it.
     if not isinstance(metadata.get('chat_id'), str):
         metadata['chat_id'] = ''
@@ -2568,7 +2573,7 @@ async def process_chat_payload(request, form_data, user, metadata, model):
         if folder and folder.data:
             if 'system_prompt' in folder.data:
                 form_data = await apply_system_prompt_to_body(folder.data['system_prompt'], form_data, metadata, user)
-            if 'files' in folder.data:
+            if allow_knowledge and 'files' in folder.data:
                 if metadata.get('params', {}).get('function_calling') == 'legacy':
                     form_data['files'] = [
                         {'type': 'folder', 'id': folder.id},
@@ -2581,7 +2586,7 @@ async def process_chat_payload(request, form_data, user, metadata, model):
 
     # Model "Knowledge" handling
     user_message = get_last_user_message(form_data['messages'])
-    model_knowledge = model.get('info', {}).get('meta', {}).get('knowledge', False)
+    model_knowledge = model.get('info', {}).get('meta', {}).get('knowledge', False) if allow_knowledge else []
 
     if model_knowledge and metadata.get('params', {}).get('function_calling') == 'legacy':
         await event_emitter(
@@ -2624,6 +2629,7 @@ async def process_chat_payload(request, form_data, user, metadata, model):
     variables = form_data.pop('variables', None)
     payload_tools = form_data.get('tools', None)  # snapshot before filters
 
+    # Preserve chat eligibility; the shared helper separately rejects API-key use.
     if should_process_chat_filters(metadata):
         # Process the form_data through the pipeline
         try:
@@ -2748,7 +2754,7 @@ async def process_chat_payload(request, form_data, user, metadata, model):
 
     is_note_chat = bool(chat and (chat.meta or {}).get('internal') is True and (chat.meta or {}).get('type') == 'note')
 
-    if is_note_chat:
+    if is_note_chat and allow_knowledge:
         note_id = (chat.meta or {}).get('note_id')
         note = await Notes.get_note_by_id(note_id) if note_id else None
         if note and (
@@ -2771,10 +2777,13 @@ async def process_chat_payload(request, form_data, user, metadata, model):
             if note_files:
                 files = [*(files or []), *note_files]
 
-    use_builtin_tools = is_note_chat or (
-        bool(metadata.get('session_id'))
-        and metadata.get('params', {}).get('function_calling') != 'legacy'
-        and (model.get('info', {}).get('meta', {}).get('capabilities') or {}).get('builtin_tools', True)
+    use_builtin_tools = allow_knowledge and (
+        is_note_chat
+        or (
+            bool(metadata.get('session_id'))
+            and metadata.get('params', {}).get('function_calling') != 'legacy'
+            and (model.get('info', {}).get('meta', {}).get('capabilities') or {}).get('builtin_tools', True)
+        )
     )
 
     if skill_ids:
@@ -3885,6 +3894,9 @@ async def outlet_filter_handler(ctx):
     For temp/API chats, messages are built from form_data plus ctx['assistant_message'].
     """
     request = ctx['request']
+    if is_api_key_request(request):
+        return
+
     user = ctx['user']
     model = ctx['model']
     metadata = ctx['metadata']

@@ -206,6 +206,7 @@ from open_webui.utils import logger
 from open_webui.utils.access_control import has_permission
 from open_webui.utils.access_control.folders import has_folder_write_access
 from open_webui.utils.actions import chat_action as chat_action_handler
+from open_webui.utils.api_policy import is_api_key_request
 from open_webui.utils.asgi_middleware import AppHTTPMiddleware
 from open_webui.utils.audit import AuditLevel, AuditLoggingMiddleware
 from open_webui.utils.auth import (
@@ -1089,6 +1090,20 @@ async def chat_completion(
     form_data: dict,
     user=Depends(get_verified_user),
 ):
+    if is_api_key_request(request) and any(
+        isinstance(context, dict) and (context.get('files') or context.get('folder_id'))
+        for context in (
+            form_data,
+            form_data.get('metadata'),
+            form_data.get('user_message'),
+            form_data.get('parent_message'),
+        )
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail='Knowledge and file attachments are not available with API keys.',
+        )
+
     if not request.app.state.MODELS:
         await get_all_models(request, user=user)
 

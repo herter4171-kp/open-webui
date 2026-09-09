@@ -39,6 +39,7 @@ from open_webui.models.auths import Auths
 from open_webui.models.config import Config
 from open_webui.models.users import Users
 from open_webui.utils.access_control import has_permission
+from open_webui.utils.api_policy import check_api_key_path
 from open_webui.utils.json_codec import JSONCodec
 from open_webui.utils.misc import parse_duration
 from pytz import UTC
@@ -478,6 +479,8 @@ async def get_current_user_by_api_key(request, api_key: str):
     if not config_values.get('auth.enable_api_keys'):
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail=ERROR_MESSAGES.API_KEY_NOT_ALLOWED)
 
+    check_api_key_path(request)
+
     if user.role != 'admin':
         user_permissions = config_values.get('user.permissions')
         if not await has_permission(
@@ -513,6 +516,7 @@ async def get_current_user_by_api_key(request, api_key: str):
             current_span.set_attribute('client.auth.type', 'api_key')
 
     await Users.update_last_active_by_id(user.id)
+    request.state.auth_type = 'api_key'
     return user
 
 

@@ -22,6 +22,7 @@ from open_webui.env import AIOHTTP_CLIENT_SESSION_SSL, AIOHTTP_FILE_STREAM_CHUNK
 from open_webui.events import EVENTS, publish_event
 from open_webui.models.config import Config
 from open_webui.routers.openai import get_all_models_responses
+from open_webui.utils.api_policy import is_api_key_request
 from open_webui.utils.auth import get_admin_user
 from pydantic import BaseModel
 from starlette.responses import FileResponse
@@ -61,6 +62,9 @@ async def get_openai_connection(url_idx: int) -> tuple[str, str]:
 
 
 async def process_pipeline_inlet_filter(request, payload, user, models):
+    if is_api_key_request(request):
+        return payload
+
     user = {'id': user.id, 'email': user.email, 'name': user.name, 'role': user.role}
     model_id = payload['model']
     sorted_filters = get_sorted_filters(model_id, models)
@@ -127,6 +131,9 @@ async def process_pipeline_inlet_filter(request, payload, user, models):
 
 
 async def process_pipeline_outlet_filter(request, payload, user, models):
+    if is_api_key_request(request):
+        return payload
+
     user = {'id': user.id, 'email': user.email, 'name': user.name, 'role': user.role}
     model_id = payload['model']
     sorted_filters = get_sorted_filters(model_id, models)

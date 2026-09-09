@@ -94,7 +94,7 @@
 	import MobileSwipePanel from '../common/MobileSwipePanel.svelte';
 
 	const BREAKPOINT = 768;
-	const DEFAULT_PINNED_ITEMS = ['docs', 'notes', 'workspace'];
+	const DEFAULT_PINNED_ITEMS = ['notes', 'workspace'];
 
 	let scrollTop = 0;
 
@@ -152,7 +152,9 @@
 		folderRegistry[folder.id]?.setFolderItems?.();
 	};
 
-	$: pinnedItems = $settings?.pinnedMenuItems ?? DEFAULT_PINNED_ITEMS;
+	// Docs stays visible independently of saved menu pins.
+	$: pinnedItems = ($settings?.pinnedMenuItems ?? DEFAULT_PINNED_ITEMS).filter((id) => id !== 'docs');
+	$: menuItems = ['docs', ...pinnedItems];
 
 	const isMenuItemVisible = (id) => {
 		switch (id) {
@@ -191,7 +193,7 @@
 
 	const getMenuItemMeta = (id) => {
 		const items = {
-			docs: { label: 'Docs', href: '/docs', iconType: 'note'},
+			docs: { label: 'Docs', href: '/docs', iconType: 'note' },
 			notes: { label: 'Notes', href: '/notes', iconType: 'note' },
 			workspace: { label: 'Workspace', href: '/workspace', iconType: 'workspace' },
 			automations: { label: 'Automations', href: '/automations', iconType: 'automations' },
@@ -202,6 +204,7 @@
 	};
 
 	const menuItemPathPrefixes = {
+		docs: '/docs',
 		notes: '/notes',
 		workspace: '/workspace',
 		calendar: '/calendar',
@@ -226,9 +229,11 @@
 		if (el && !$mobile) {
 			new Sortable(el, {
 				animation: 150,
+				draggable: '[data-id]:not([data-id="docs"])',
+				onMove: (event) => event.related.dataset.id !== 'docs',
 				onUpdate: async (event) => {
 					const itemId = event.item.dataset.id;
-					const newIndex = event.newIndex;
+					const newIndex = event.newDraggableIndex;
 					const current = [...pinnedItems];
 					const oldIndex = current.indexOf(itemId);
 					current.splice(oldIndex, 1);
@@ -1028,7 +1033,7 @@
 						</Tooltip>
 					</div>
 
-					{#each pinnedItems as itemId (itemId)}
+					{#each menuItems as itemId (itemId)}
 						{@const meta = getMenuItemMeta(itemId)}
 						{#if meta && isMenuItemVisible(itemId)}
 							<div class="">
@@ -1039,7 +1044,11 @@
 										on:click={async (e) => {
 											e.stopImmediatePropagation();
 											e.preventDefault();
-											goto(meta.href);
+											if (itemId === 'docs') {
+												window.location.assign(meta.href);
+											} else {
+												goto(meta.href);
+											}
 											itemClickHandler();
 										}}
 										draggable="false"
@@ -1053,7 +1062,7 @@
 													: 'bg-black/[0.035] dark:bg-white/[0.045]'
 												: 'group-hover:bg-gray-100 dark:group-hover:bg-gray-900'}"
 										>
-											{#if itemId === 'notes'}
+											{#if itemId === 'notes' || itemId === 'docs'}
 												<NotesIcon className="size-4" strokeWidth="1.5" />
 											{:else if itemId === 'workspace'}
 												<WorkspaceIcon className="size-4" strokeWidth="1.5" />
@@ -1254,7 +1263,7 @@
 						</div>
 
 						<div id="pinned-menu-items-list">
-							{#each pinnedItems as itemId (itemId)}
+							{#each menuItems as itemId (itemId)}
 								{@const meta = getMenuItemMeta(itemId)}
 								{#if meta && isMenuItemVisible(itemId)}
 									<div
@@ -1270,12 +1279,13 @@
 													: 'bg-black/[0.035] dark:bg-white/[0.045]'
 												: 'hover:bg-gray-100 dark:hover:bg-gray-900'}"
 											href={meta.href}
+											data-sveltekit-reload={itemId === 'docs'}
 											on:click={itemClickHandler}
 											draggable="false"
 											aria-label={$i18n.t(meta.label)}
 										>
 											<div class="self-center flex size-4 shrink-0 items-center justify-center">
-												{#if itemId === 'notes'}
+												{#if itemId === 'notes' || itemId === 'docs'}
 													<NotesIcon className="size-4" strokeWidth="1.5" />
 												{:else if itemId === 'workspace'}
 													<WorkspaceIcon className="size-4" strokeWidth="1.5" />
