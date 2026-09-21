@@ -17,7 +17,7 @@
             <br><br>
             By logging in, you certify that you have read: <br>
             <a 
-                href="https://kairospowerllc.sharepoint.us/:w:/s/IT/EZhHkM5TsZ1Pm-7neZ1MVwYBdSZSQ9tf9wCuOgTNfkIGtQ?e=NVl30c" 
+                href="https://kairospowerllc.sharepoint.us/:w:/r/sites/IT/IT%20Policies/Use_of_Large_Language_Models.docx?d=wba48ee2948fc4efdad2b4fda2d8fca7b&csf=1&web=1&e=l6ZmGv" 
                 class="font-bold underline text-[#EDE100] hover:text-white transition-colors"
                 target="_blank"
             >
